@@ -54,11 +54,15 @@ View(parameters)
 #plotting----
 #Dont need to plot the pilot repeated for each LabMul
 parameters.pilot <- subset(parameters, LabMul == 2)
+
+colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=5))
 Eff.plot <- ggplot(data=parameters, aes(x=npilot, y=EffLab, colour=as.factor(LabMul))) +
   facet_grid(as.factor(r.LabPilot) ~ as.factor(d)) +
   geom_line() + 
+  scale_colour_manual("Lab Sample\nMultiple", values=colorscale) +
   geom_line(data=parameters.pilot, aes(x=npilot, y=EffPilot), colour = "black", size=2) +
-  DotRTheme()
+  DotRTheme(legend.position = "right") +
+  theme(panel.border = element_rect(color = "black", fill=NA))
 Eff.plot
 
 
