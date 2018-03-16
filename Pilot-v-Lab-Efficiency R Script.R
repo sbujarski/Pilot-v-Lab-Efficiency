@@ -25,7 +25,7 @@ parameters$nlab <- parameters$npilot * parameters$LabMul
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nSims <- 100
+nSims <- 1000
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -64,7 +64,7 @@ Eff.plot <- ggplot(data=parameters, aes(x=npilot, y=EffLab, colour=as.factor(Lab
   geom_line() + 
   scale_colour_manual("Lab Sample\nMultiple", values=colorscale) +
   geom_line(data=parameters.pilot, aes(x=npilot, y=EffPilot), colour = "black", size=2) +
-  DotRTheme(legend.position = "right") +
+  theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
 Eff.plot
 
