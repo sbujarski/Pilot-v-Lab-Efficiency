@@ -23,22 +23,17 @@ parameters <- expand.grid(d = c(0.2, 0.5, 0.8),
 parameters <- arrange(parameters, d, npilot, LabMul, r.LabPilot)
 parameters$nlab <- parameters$npilot * parameters$LabMul
 
-#compute SD of d
-for (i in 1:dim(parameters)[1]){
-  parameters$d.SD <- sqrt(des(d=parameters$d[i], n.1=parameters$npilot/2, n.2=parameters$npilot/2, verbose=F, dig=8)$var.d)
-}
-
-
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
 
 #testing with i = 1
 nSims <- 1000
 SimData <- SimCor(n = nSims, 
-                  xmean = parameters$d[i], xsd = parameters$d.SD[i], 
-                  ymean = parameters$d[i], ysd = parameters$d.SD[i],
+                  xmean = parameters$d[i], xsd = sqrt(des(d=parameters$d[i], n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$var.d), 
+                  ymean = parameters$d[i], ysd = sqrt(des(d=parameters$d[i], n.1=parameters$nlab[i]/2, n.2=parameters$nlab[i]/2, verbose=F, dig=8)$var.d),
                   rho = parameters$r.LabPilot[i])
 SimData <- rename(SimData, dPilot = x, dLab = y)
+SpDesc(SimData)
 # SpDesc(SimData)
 # cor.test(~ dPilot + dLab, data=SimData)
 #use lapply to get the sqrt of each dPilot and dLab
@@ -47,14 +42,16 @@ SimData$dLab.SD <- as.double(lapply(SimData$dLab, function(x) sqrt(des(d=x, n.1=
 
 #get p-values from d's
 SimData$dPilot.p <- as.double(lapply(SimData$dPilot, function(x) des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$pval.d))
-SimData$dLab.p <- as.double(lapply(SimData$dLab, function(x) des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$pval.d))
+SimData$dLab.p <- as.double(lapply(SimData$dLab, function(x) des(d=x, n.1=parameters$nlab[i]/2, n.2=parameters$nlab[i]/2, verbose=F, dig=8)$pval.d))
 
 
-SpHist(data=SimData, variable = "dPilot")
-SpHist(data=SimData, variable = "dLab")
-SpHist(data=SimData, variable = "dPilot.p")
-SpHist(data=SimData, variable = "dLab.p")
+# SpHist(data=SimData, variable = "dPilot")
+# SpHist(data=SimData, variable = "dLab")
+# SpHist(data=SimData, variable = "dPilot.p")
+# SpHist(data=SimData, variable = "dLab.p")
 
-mean(SimData$dPilot.p<0.05)
-mean(SimData$dLab.p<0.05)
+parameters$EffPilot <- mean(SimData$dPilot.p<0.05)
+parameters$EffLab <- mean(SimData$dLab.p<0.05)
+
+
 
