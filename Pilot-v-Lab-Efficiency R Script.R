@@ -24,7 +24,7 @@ parameters <- arrange(parameters, d, npilot, LabMul, r.LabRCT)
 
 #compute SD of d
 for (i in 1:dim(parameters)[1]){
-  parameters$d.SD <- sqrt(des(d=parameters$d[i], n.1=parameters$npilot/2, n.2=parameters$npilot/2, verbose=F)$var.d)
+  parameters$d.SD <- sqrt(des(d=parameters$d[i], n.1=parameters$npilot/2, n.2=parameters$npilot/2, verbose=F, dig=8)$var.d)
 }
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
@@ -40,7 +40,16 @@ SimData <- rename(SimData, dRCT = x, dLab = y)
 # SpDesc(SimData)
 # cor.test(~ dRCT + dLab, data=SimData)
 #use lapply to get the sqrt of each dRCT and dLab
-SimData$dRCT.SD <- lapply(SimData$dRCT, function(x) sqrt(des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F)$var.d))
-SimData$dLab.SD <- lapply(SimData$dLab, function(x) sqrt(des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F)$var.d))
+SimData$dRCT.SD <- as.double(lapply(SimData$dRCT, function(x) sqrt(des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$var.d)))
+SimData$dLab.SD <- as.double(lapply(SimData$dLab, function(x) sqrt(des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$var.d)))
 
+#get p-values from d's
+SimData$dRCT.p <- as.double(lapply(SimData$dRCT, function(x) des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$pval.d))
+SimData$dLab.p <- as.double(lapply(SimData$dLab, function(x) des(d=x, n.1=parameters$npilot[i]/2, n.2=parameters$npilot[i]/2, verbose=F, dig=8)$pval.d))
+
+
+SpHist(data=SimData, variable = "dRCT")
+SpHist(data=SimData, variable = "dLab")
+SpHist(data=SimData, variable = "dRCT.p")
+SpHist(data=SimData, variable = "dLab.p")
 
