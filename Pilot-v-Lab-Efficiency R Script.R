@@ -18,14 +18,14 @@ library(MBESS)
 
 parameters <- expand.grid(d = c(0.2, 0.5, 0.8), 
                          npilot = seq(6,36,6),
-                         LabMul = seq(2,10,2),
+                         LabMul = seq(1,4,1),
                          r.LabPilot = seq(0.3,0.9,0.2))
 parameters <- arrange(parameters, d, npilot, LabMul, r.LabPilot)
 parameters$nlab <- parameters$npilot * parameters$LabMul
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nSims <- 100
+nSims <- 10
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -55,9 +55,9 @@ View(parameters)
 #Dont need to plot the pilot repeated for each LabMul
 parameters.pilot <- subset(parameters, LabMul == 2)
 
-colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=5))
+colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=4))
 Eff.plot <- ggplot(data=parameters, aes(x=npilot, y=EffLab, colour=as.factor(LabMul))) +
-  facet_grid(as.factor(r.LabPilot) ~ as.factor(d)) +
+  facet_grid(paste("Lab-RCT r = ", r.LabPilot) ~ paste("Cohen's d = ",d)) +
   geom_line() + 
   scale_colour_manual("Lab Sample\nMultiple", values=colorscale) +
   geom_line(data=parameters.pilot, aes(x=npilot, y=EffPilot), colour = "black", size=2) +
