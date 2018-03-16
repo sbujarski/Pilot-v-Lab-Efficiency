@@ -25,7 +25,7 @@ parameters$nlab <- parameters$npilot * parameters$LabMul
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nSims <- 10
+nSims <- 100
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -46,7 +46,10 @@ for (i in 1:dim(parameters)[1]){
 
   #save the power of Pilot and associated lab studies
   parameters$EffPilot[i] <- mean(SimData$dPilot.p<0.05)
-  parameters$EffLab[i] <- mean(SimData$dLab.p<0.05)
+  
+  #How to account for the fact that a significant lab result might be a false positive
+  #Only count a significant Lab test as "efficient positive screen" if the SimData$dPilot which is the medication RCT effect size is >= 0.2
+  parameters$EffLab[i] <- sum(subset(SimData, dPilot >= 0.2)$dLab.p<0.05)/nSims
 }
 
 View(parameters)
