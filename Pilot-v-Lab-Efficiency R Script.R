@@ -10,7 +10,7 @@ library(Hmisc) #rcorr
 library(compute.es)
 library(MBESS)
 library(pwr)
-library(Mass)
+library(MASS) #mvrnorm simulation function
 
 #parameters to test
 #d = c(0.2, 0.5, 0.8) -- small, medium and large canonical Cohen's d
@@ -24,6 +24,11 @@ parameters <- expand.grid(nPilot = seq(6,36,6),
 parameters <- arrange(parameters, nPilot, LabMul, r.LabPilot)
 parameters$nLab <- parameters$nPilot * parameters$LabMul
 
+#testing mvrnorm
+test <- data.frame(mvrnorm(n=1000, mu = c(0.8,0.8), Sigma = matrix(c(0.2^2, 0.9*0.2^2, 0.9*0.2^2, 0.2^2), nrow=2)))
+SpDesc(test)
+cor(test)
+
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
 nMeds <- 1000
@@ -33,14 +38,15 @@ for (i in 1:dim(parameters)[1]){
   
   #Simulate nMeds of each d (0, 0.2, 0.5, 0.8) with SD = 0.2
   #Simulate simultaneously the medication lab efficacy based on parameters$r.LabPilot[i]
-  SimMeds.d0 <- data.frame(dgroup=0, SimCor(n = nMeds, xmean=0, xsd=0.2, ymean=0, ysd=0.2, rho=parameters$r.LabPilot[i]))
-  SimMeds.d0 <- rename(SimMeds.d0, dPilot = x, dLab = y)
-  SimMeds.d2 <- data.frame(dgroup=0.2, SimCor(n = nMeds, xmean=0.2, xsd=0.2, ymean=0.2, ysd=0.2, rho=parameters$r.LabPilot[i]))
-  SimMeds.d2 <- rename(SimMeds.d2, dPilot = x, dLab = y)
-  SimMeds.d5 <- data.frame(dgroup=0.5, SimCor(n = nMeds, xmean=0.5, xsd=0.2, ymean=0.5, ysd=0.2, rho=parameters$r.LabPilot[i]))
-  SimMeds.d5 <- rename(SimMeds.d5, dPilot = x, dLab = y)
-  SimMeds.d8 <- data.frame(dgroup=0.8, SimCor(n = nMeds, xmean=0.8, xsd=0.2, ymean=0.8, ysd=0.2, rho=parameters$r.LabPilot[i]))
-  SimMeds.d8 <- rename(SimMeds.d8, dPilot = x, dLab = y)
+  covariances <- matrix(c(0.2^2, parameters$r.LabPilot[i]*0.2^2, parameters$r.LabPilot[i]*0.2^2, 0.2^2), nrow=2)
+  SimMeds.d0 <- data.frame(dgroup=0, data.frame(mvrnorm(n=nMeds, mu = c(0,0), Sigma = covariances)))
+  SimMeds.d0 <- rename(SimMeds.d0, dPilot = X1, dLab = X2)
+  SimMeds.d2 <- data.frame(dgroup=0.2, data.frame(mvrnorm(n=nMeds, mu = c(0.2,0.2), Sigma = covariances)))
+  SimMeds.d2 <- rename(SimMeds.d2, dPilot = X1, dLab = X2)
+  SimMeds.d5 <- data.frame(dgroup=0.5, data.frame(mvrnorm(n=nMeds, mu = c(0.5,0.5), Sigma = covariances)))
+  SimMeds.d5 <- rename(SimMeds.d5, dPilot = X1, dLab = X2)
+  SimMeds.d8 <- data.frame(dgroup=0.8, data.frame(mvrnorm(n=nMeds, mu = c(0.8,0.8), Sigma = covariances)))
+  SimMeds.d8 <- rename(SimMeds.d8, dPilot = X1, dLab = X2)
   
   #merge Simulated meds
   SimMeds <- rbind(SimMeds.d0, SimMeds.d2, SimMeds.d5, SimMeds.d8)
@@ -57,13 +63,13 @@ for (i in 1:dim(parameters)[1]){
   SimMeds$power.Lab <- as.double(lapply(SimMeds$dLab, function(x) pwr.t.test(n=(parameters$nLab[i]/2), d=x, sig.level=0.025, 
                                                                                  type="two.sample", alternative="greater")$power))
   
-  SimMeds.d0$power.Pilot <- as.double(lapply(SimMeds.d0$dPilot, function(x) pwr.t.test(n=(parameters$nPilot[i]/2), d=x, sig.level=0.025,
-                                                                                   type="two.sample", alternative="greater")$power))
-  SimMeds.d0$power.Lab <- as.double(lapply(SimMeds.d0$dLab, function(x) pwr.t.test(n=(parameters$nLab[i]/2), d=x, sig.level=0.025,
-                                                                             type="two.sample", alternative="greater")$power))
-  SimMeds %>% group_by(as.factor(dgroup)) %>% summarise(meanpowerpilot = mean(power.Pilot), meanpowerlab = mean(power.Lab))
-  ggplot(data=SimMeds.d0, aes(x=dPilot, y=power.Pilot)) + geom_point() + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(-1,1))
-  ggplot(data=SimMeds.d0, aes(x=dLab, y=power.Lab)) + geom_point() + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(-1,1))
+  # SimMeds.d0$power.Pilot <- as.double(lapply(SimMeds.d0$dPilot, function(x) pwr.t.test(n=(parameters$nPilot[i]/2), d=x, sig.level=0.025,
+  #                                                                                  type="two.sample", alternative="greater")$power))
+  # SimMeds.d0$power.Lab <- as.double(lapply(SimMeds.d0$dLab, function(x) pwr.t.test(n=(parameters$nLab[i]/2), d=x, sig.level=0.025,
+  #                                                                            type="two.sample", alternative="greater")$power))
+  # SimMeds %>% group_by(as.factor(dgroup)) %>% summarise(meanpowerpilot = mean(power.Pilot), meanpowerlab = mean(power.Lab))
+  # ggplot(data=SimMeds.d0, aes(x=dPilot, y=power.Pilot)) + geom_point() + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(-1,1))
+  # ggplot(data=SimMeds.d0, aes(x=dLab, y=power.Lab)) + geom_point() + scale_y_continuous(limits=c(0,1)) + scale_x_continuous(limits=c(-1,1))
 
   #calculate expected number of positive findings by effect size group
   positives <- SimMeds %>% group_by(as.factor(dgroup)) %>% summarise(posPilot = sum(power.Pilot), posLab = sum(power.Lab))  
