@@ -31,7 +31,7 @@ cor(test)
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nMeds <- 1000
+nMeds <- 5000
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -97,10 +97,13 @@ PilotEfficiency <- parameters %>% group_by(nPilot) %>% summarise(meaneff.Pilot.d
 
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
 Eff.plot.d2 <- ggplot(data=parameters, aes(x=nPilot, y=eff.Lab.d2, colour=as.factor(r.LabPilot))) +
-  facet_grid(LabMul ~ .) +
+  facet_grid(paste("Lab Multiple", LabMul) ~ .) +
   geom_line() + 
   geom_line(data=PilotEfficiency, aes(x=nPilot, y=meaneff.Pilot.d2), colour = "black", size=2) +
-  scale_colour_manual("Lab-Pilot\nCorrelation", values=colorscale) +
+  scale_colour_manual("Correlation between\n Lab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Screening Efficiency (True Positives/False Positives)") +
+  ggtitle("Pilot versus Lab Study Screening Efficiency\nEffect Size d = 0.2")
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
 Eff.plot.d2
