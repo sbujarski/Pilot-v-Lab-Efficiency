@@ -13,7 +13,6 @@ library(pwr)
 library(MASS) #mvrnorm simulation function
 
 #parameters to test
-#d = c(0.2, 0.5, 0.8) -- small, medium and large canonical Cohen's d
 #nPilot = seq(6,36,6) -- sample size of pilot test from 6 to 36
 #LabMul = seq(2,10,2) -- Lab multiple for sample size associated with laboratory studies being considerably cheaper to run
 #r.LabPilot = seq(0.3,0.9,0.2) -- correlation between laboratory-based effect size and the Pilot effect size
@@ -31,7 +30,7 @@ parameters$nLab <- parameters$nPilot * parameters$LabMul
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nMeds <- 10
+nMeds <- 1000
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -39,6 +38,7 @@ for (i in 1:dim(parameters)[1]){
   #Simulate nMeds of each d (0, 0.2, 0.5, 0.8) with SD = 0.2
   #Simulate simultaneously the medication lab efficacy based on parameters$r.LabPilot[i]
   covariances <- matrix(c(0.2^2, parameters$r.LabPilot[i]*0.2^2, parameters$r.LabPilot[i]*0.2^2, 0.2^2), nrow=2)
+  
   SimMeds.d0 <- data.frame(dgroup=0, data.frame(mvrnorm(n=nMeds, mu = c(0,0), Sigma = covariances)))
   SimMeds.d0 <- rename(SimMeds.d0, dPilot = X1, dLab = X2)
   SimMeds.d2 <- data.frame(dgroup=0.2, data.frame(mvrnorm(n=nMeds, mu = c(0.2,0.2), Sigma = covariances)))
