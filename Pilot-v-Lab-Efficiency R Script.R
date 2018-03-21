@@ -164,7 +164,7 @@ sens.plot
 #Specificity
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
 spec.plot <- ggplot(data=parameters, aes(x=nPilot, y=spec.Lab, colour=as.factor(r.LabPilot))) +
-  facet_grid(LabMul ~ d) +
+  facet_grid(LabMulstr ~ dstr) +
   geom_line(size=1.5) + 
   geom_line(data=PilotEfficiency, aes(x=nPilot, y=spec.Pilot), colour = "black", size=2) + 
   scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
@@ -178,13 +178,13 @@ spec.plot
 #ppv
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
 ppv.plot <- ggplot(data=parameters, aes(x=nPilot, y=ppv.Lab, colour=as.factor(r.LabPilot))) +
-  facet_grid(LabMul ~ d) +
+  facet_grid(LabMulstr ~ dstr) +
   geom_line(size=1.5) + 
   geom_line(data=PilotEfficiency, aes(x=nPilot, y=ppv.Pilot), colour = "black", size=2) + 
   scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
   scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
   scale_y_continuous("Positive Predictive Value", limits=c(0,1)) +
-  ggtitle("Positive Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.2") +
+  ggtitle("Positive Predictive Value - Pilot versus Lab Screening") +
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
 ppv.plot
@@ -193,13 +193,13 @@ ppv.plot
 #npv
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
 npv.plot <- ggplot(data=parameters, aes(x=nPilot, y=npv.Lab, colour=as.factor(r.LabPilot))) +
-  facet_grid(LabMul ~ d) +
+  facet_grid(LabMulstr ~ dstr) +
   geom_line(size=1.5) + 
   geom_line(data=PilotEfficiency, aes(x=nPilot, y=npv.Pilot), colour = "black", size=2) + 
   scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
   scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
   scale_y_continuous("Negative Predictive Value", limits=c(0,1)) +
-  ggtitle("Negative Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.2") +
+  ggtitle("Negative Predictive Value - Pilot versus Lab Screening") +
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
 npv.plot
