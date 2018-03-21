@@ -86,7 +86,7 @@ dim(parameters)
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nMeds <- 10
+nMeds <- 5000
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -138,21 +138,21 @@ View(parameters)
 
 #plotting----
 #average pilot efficiency for each nPilot
-PilotEfficiency <- parameters %>% group_by(nPilot) %>% summarise(sens.Pilot = mean(sens.Pilot),
+PilotEfficiency <- parameters %>% group_by(nPilot, d) %>% summarise(sens.Pilot = mean(sens.Pilot),
                                                                  spec.Pilot = mean(spec.Pilot),
                                                                  ppv.Pilot = mean(ppv.Pilot),
                                                                  npv.Pilot = mean(npv.Pilot))
 #make strings for facet labels
 parameters$dstr <- paste("d = ", parameters$d)
 parameters$LabMulstr <- paste("Lab Multiple = ", parameters$LabMul)
-
+PilotEfficiency$dstr <- paste("d = ", PilotEfficiency$d)
 
 #Sensitivity
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
 sens.plot <- ggplot(data=parameters, aes(x=nPilot, y=sens.Lab, colour=as.factor(r.LabPilot))) +
-  facet_grid(LabMulstr ~ dstr) +
-  geom_line(size=1.5) + 
+  geom_line(size=1) + 
   geom_line(data=PilotEfficiency, aes(x=nPilot, y=sens.Pilot), colour = "black", size=2) + 
+  facet_grid(LabMulstr ~ dstr) +
   scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
   scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
   scale_y_continuous("Sensitivity", limits=c(0,1)) +
@@ -188,7 +188,6 @@ ppv.plot <- ggplot(data=parameters, aes(x=nPilot, y=ppv.Lab, colour=as.factor(r.
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
 ppv.plot
-
 
 #npv
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
