@@ -25,13 +25,13 @@ parameters <- arrange(parameters, nPilot, LabMul, r.LabPilot)
 parameters$nLab <- parameters$nPilot * parameters$LabMul
 
 #testing mvrnorm
-test <- data.frame(mvrnorm(n=1000, mu = c(0.8,0.8), Sigma = matrix(c(0.2^2, 0.9*0.2^2, 0.9*0.2^2, 0.2^2), nrow=2)))
-SpDesc(test)
-cor(test)
+# test <- data.frame(mvrnorm(n=1000, mu = c(0.8,0.8), Sigma = matrix(c(0.2^2, 0.9*0.2^2, 0.9*0.2^2, 0.2^2), nrow=2)))
+# SpDesc(test)
+# cor(test)
 
 #Want to run a simulation of 1000 meds for each parameter combination and compute the efficiency of pilot and lab based studies 
 #efficiency defined in terms of the number of medications that would receive a positive signal justifying a large Pilot
-nMeds <- 5000
+nMeds <- 10
 for (i in 1:dim(parameters)[1]){
   #tracking simulations
   print(noquote(paste("parameter combination ", i, "out of ", dim(parameters)[1])))
@@ -74,63 +74,197 @@ for (i in 1:dim(parameters)[1]){
   #calculate expected number of positive findings by effect size group
   positives <- SimMeds %>% group_by(as.factor(dgroup)) %>% summarise(posPilot = sum(power.Pilot), posLab = sum(power.Lab))  
   
-  #calculate the efficiency
-  #defined as number of positive screens from pilot/lab studies as a multiple as those with 0 effect size
-  #Pilot Efficiencies
-  parameters$eff.Pilot.d2[i] <- positives$posPilot[2] / positives$posPilot[1]
-  parameters$eff.Pilot.d5[i] <- positives$posPilot[3] / positives$posPilot[1]
-  parameters$eff.Pilot.d8[i] <- positives$posPilot[4] / positives$posPilot[1]
+  # #calculate the efficiency
+  # #defined as number of positive screens from pilot/lab studies as a multiple as those with 0 effect size
+  # #Pilot Efficiencies
+  # parameters$eff.Pilot.d2[i] <- positives$posPilot[2] / positives$posPilot[1]
+  # parameters$eff.Pilot.d5[i] <- positives$posPilot[3] / positives$posPilot[1]
+  # parameters$eff.Pilot.d8[i] <- positives$posPilot[4] / positives$posPilot[1]
+  # 
+  # #Lab Efficiencies
+  # parameters$eff.Lab.d2[i] <- positives$posLab[2] / positives$posLab[1]
+  # parameters$eff.Lab.d5[i] <- positives$posLab[3] / positives$posLab[1]
+  # parameters$eff.Lab.d8[i] <- positives$posLab[4] / positives$posLab[1]
   
-  #Lab Efficiencies
-  parameters$eff.Lab.d2[i] <- positives$posLab[2] / positives$posLab[1]
-  parameters$eff.Lab.d5[i] <- positives$posLab[3] / positives$posLab[1]
-  parameters$eff.Lab.d8[i] <- positives$posLab[4] / positives$posLab[1]
+  #What do we want to know?
+  #1) what is the probability that an effective medication will screen positive (sensitivity)
+  parameters$sens.Pilot.d2[i] <- positives$posPilot[2] / nMeds 
+  parameters$sens.Pilot.d5[i] <- positives$posPilot[3] / nMeds 
+  parameters$sens.Pilot.d8[i] <- positives$posPilot[4] / nMeds 
+  
+  parameters$sens.Lab.d2[i] <- positives$posLab[2] / nMeds 
+  parameters$sens.Lab.d5[i] <- positives$posLab[3] / nMeds 
+  parameters$sens.Lab.d8[i] <- positives$posLab[4] / nMeds 
+  
+  #2) What is the probability that an ineffective medication screens negative (specificity) - independent of medication effect size
+  parameters$spec.Pilot[i] <- (nMeds-positives$posPilot[1]) / nMeds 
+  
+  parameters$spec.Lab[i] <- (nMeds-positives$posLab[1]) / nMeds 
+  
+  #3) what is the probability that positive screen is a true positive (positive predictive value)
+  parameters$ppv.Pilot.d2[i] <- positives$posPilot[2] / (positives$posPilot[2] + positives$posPilot[1]) 
+  parameters$ppv.Pilot.d5[i] <- positives$posPilot[3] / (positives$posPilot[3] + positives$posPilot[1]) 
+  parameters$ppv.Pilot.d8[i] <- positives$posPilot[4] / (positives$posPilot[4] + positives$posPilot[1]) 
+  
+  parameters$ppv.Lab.d2[i] <- positives$posLab[2] / (positives$posLab[2] + positives$posLab[1]) 
+  parameters$ppv.Lab.d5[i] <- positives$posLab[3] / (positives$posLab[3] + positives$posLab[1]) 
+  parameters$ppv.Lab.d8[i] <- positives$posLab[4] / (positives$posLab[4] + positives$posLab[1]) 
+  
+  #4) what is the probability that negative screen is a true negative (negative predictive value)
+  parameters$npv.Pilot.d2[i] <- (nMeds - positives$posPilot[1]) / (2*nMeds - (positives$posPilot[2] + positives$posPilot[1])) 
+  parameters$npv.Pilot.d5[i] <- (nMeds - positives$posPilot[1]) / (2*nMeds - (positives$posPilot[3] + positives$posPilot[1]))
+  parameters$npv.Pilot.d8[i] <- (nMeds - positives$posPilot[1]) / (2*nMeds - (positives$posPilot[4] + positives$posPilot[1]))
+  
+  parameters$npv.Lab.d2[i] <- (nMeds - positives$posLab[1]) / (2*nMeds - (positives$posLab[2] + positives$posLab[1])) 
+  parameters$npv.Lab.d5[i] <- (nMeds - positives$posLab[1]) / (2*nMeds - (positives$posLab[3] + positives$posLab[1]))
+  parameters$npv.Lab.d8[i] <- (nMeds - positives$posLab[1]) / (2*nMeds - (positives$posLab[4] + positives$posLab[1])) 
+  
 }
 
 View(parameters)
 
 #plotting----
 #average pilot efficiency for each nPilot
-PilotEfficiency <- parameters %>% group_by(nPilot) %>% summarise(meaneff.Pilot.d2 = mean(eff.Pilot.d2),
-                                                                 meaneff.Pilot.d5 = mean(eff.Pilot.d5),
-                                                                 meaneff.Pilot.d8 = mean(eff.Pilot.d8))
+PilotEfficiency <- parameters %>% group_by(nPilot) %>% summarise(sens.Pilot.d2 = mean(sens.Pilot.d2),
+                                                                 sens.Pilot.d5 = mean(sens.Pilot.d5),
+                                                                 sens.Pilot.d8 = mean(sens.Pilot.d8),
+                                                                 spec.Pilot = mean(spec.Pilot),
+                                                                 ppv.Pilot.d2 = mean(ppv.Pilot.d2),
+                                                                 ppv.Pilot.d5 = mean(ppv.Pilot.d5),
+                                                                 ppv.Pilot.d8 = mean(ppv.Pilot.d8),
+                                                                 npv.Pilot.d2 = mean(npv.Pilot.d2),
+                                                                 npv.Pilot.d5 = mean(npv.Pilot.d5),
+                                                                 npv.Pilot.d8 = mean(npv.Pilot.d8))
 
+#Sensitivity
 colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
-Eff.plot.d2 <- ggplot(data=parameters, aes(x=nPilot, y=eff.Lab.d2, colour=as.factor(r.LabPilot))) +
-  facet_grid(paste("Lab Multiple", LabMul) ~ .) +
-  geom_line() + 
-  geom_line(data=PilotEfficiency, aes(x=nPilot, y=meaneff.Pilot.d2), colour = "black", size=2) +
-  scale_colour_manual("Correlation between\n Lab and Clinic\nEffects", values=colorscale) +
+sens.plot.d2 <- ggplot(data=parameters, aes(x=nPilot, y=sens.Lab.d2, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=sens.Pilot.d2), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
   scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
-  scale_y_continuous("Screening Efficiency (True Positives/False Positives)") +
-  ggtitle("Pilot versus Lab Study Screening Efficiency\nEffect Size d = 0.2")
+  scale_y_continuous("Sensitivity", limits=c(0,1)) +
+  ggtitle("Sensitivity - Pilot versus Lab Screening\nEffect Size d = 0.2") +
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
-Eff.plot.d2
+sens.plot.d2
 
-colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
-Eff.plot.d5 <- ggplot(data=parameters, aes(x=nPilot, y=eff.Lab.d5, colour=as.factor(r.LabPilot))) +
+sens.plot.d5 <- ggplot(data=parameters, aes(x=nPilot, y=sens.Lab.d5, colour=as.factor(r.LabPilot))) +
   facet_grid(LabMul ~ .) +
-  geom_line() + 
-  geom_line(data=PilotEfficiency, aes(x=nPilot, y=meaneff.Pilot.d5), colour = "black", size=2) +
-  scale_colour_manual("Lab-Pilot\nCorrelation", values=colorscale) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=sens.Pilot.d5), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Sensitivity", limits=c(0,1)) +
+  ggtitle("Sensitivity - Pilot versus Lab Screening\nEffect Size d = 0.5") +
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
-Eff.plot.d5
+sens.plot.d5
 
-colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
-Eff.plot.d8 <- ggplot(data=parameters, aes(x=nPilot, y=eff.Lab.d8, colour=as.factor(r.LabPilot))) +
+sens.plot.d8 <- ggplot(data=parameters, aes(x=nPilot, y=sens.Lab.d8, colour=as.factor(r.LabPilot))) +
   facet_grid(LabMul ~ .) +
-  geom_line() + 
-  geom_line(data=PilotEfficiency, aes(x=nPilot, y=meaneff.Pilot.d8), colour = "black", size=2) +
-  scale_colour_manual("Lab-Pilot\nCorrelation", values=colorscale) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=sens.Pilot.d8), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Sensitivity", limits=c(0,1)) +
+  ggtitle("Sensitivity - Pilot versus Lab Screening\nEffect Size d = 0.8") +
   theme_bw() + 
   theme(panel.border = element_rect(color = "black", fill=NA))
-Eff.plot.d8
+sens.plot.d8
 
-# SpHist(data=SimData, variable = "dPilot")
-# SpHist(data=SimData, variable = "dLab")
-# SpHist(data=SimData, variable = "dPilot.p")
-# SpHist(data=SimData, variable = "dLab.p")
+#Specificity
+colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
+spec.plot <- ggplot(data=parameters, aes(x=nPilot, y=spec.Lab, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=spec.Pilot), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Specificity", limits=c(0,1)) +
+  ggtitle("Specificity - Pilot versus Lab Screening") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+spec.plot
+
+
+#ppv
+colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
+ppv.plot.d2 <- ggplot(data=parameters, aes(x=nPilot, y=ppv.Lab.d2, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=ppv.Pilot.d2), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Positive Predictive Value", limits=c(0,1)) +
+  ggtitle("Positive Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.2") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+ppv.plot.d2
+
+ppv.plot.d5 <- ggplot(data=parameters, aes(x=nPilot, y=ppv.Lab.d5, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=ppv.Pilot.d5), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Positive Predictive Value", limits=c(0,1)) +
+  ggtitle("Positive Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.5") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+ppv.plot.d5
+
+ppv.plot.d8 <- ggplot(data=parameters, aes(x=nPilot, y=ppv.Lab.d8, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=ppv.Pilot.d8), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Positive Predictive Value", limits=c(0,1)) +
+  ggtitle("Positive Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.8") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+ppv.plot.d8
+
+#npv
+colorscale <- scales::seq_gradient_pal("lightblue", "navyblue", "Lab")(seq(0,1,length.out=3))
+npv.plot.d2 <- ggplot(data=parameters, aes(x=nPilot, y=npv.Lab.d2, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=npv.Pilot.d2), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Negative Predictive Value", limits=c(0,1)) +
+  ggtitle("Negative Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.2") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+npv.plot.d2
+
+npv.plot.d5 <- ggplot(data=parameters, aes(x=nPilot, y=npv.Lab.d5, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=npv.Pilot.d5), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Negative Predictive Value", limits=c(0,1)) +
+  ggtitle("Negative Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.5") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+npv.plot.d5
+
+npv.plot.d8 <- ggplot(data=parameters, aes(x=nPilot, y=npv.Lab.d8, colour=as.factor(r.LabPilot))) +
+  facet_grid(LabMul ~ .) +
+  geom_line(size=1.5) + 
+  geom_line(data=PilotEfficiency, aes(x=nPilot, y=npv.Pilot.d8), colour = "black", size=2) + 
+  scale_colour_manual("Correlation between\nLab and Clinic\nEffects", values=colorscale) +
+  scale_x_continuous("Pilot Sample Size", limits=c(6,36), breaks=seq(6,36,6)) +
+  scale_y_continuous("Negative Predictive Value", limits=c(0,1)) +
+  ggtitle("Negative Predictive Value - Pilot versus Lab Screening\nEffect Size d = 0.8") +
+  theme_bw() + 
+  theme(panel.border = element_rect(color = "black", fill=NA))
+npv.plot.d8
+
+
 
 
